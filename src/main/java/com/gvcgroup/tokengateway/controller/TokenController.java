@@ -37,10 +37,10 @@ public class TokenController {
                                                        HttpServletRequest request,
                                                        HttpServletResponse response) {
         LOG.info("generate endpoint with username: {}", username);
-        String token = tokenHelper.generateToken(username.getUsername(), Date.from(Instant.ofEpochMilli(expiration)));
+        String token = tokenHelper.generateToken(username.getUsername(), new Date(expiration));
         response.addHeader("ws-token", token);
         LOG.info("a new token has been generated for user:{} - Token: {}", username, token);
-        return ResponseEntity.ok(new UserTokenState(token, expiration, false));
+        return ResponseEntity.ok(new UserTokenState(token, expiration, true));
     }
 
     @PostMapping(value = "/refresh")
@@ -50,19 +50,21 @@ public class TokenController {
         LOG.info("refresh endpoint with token: {}", token);
         String renewedToken = tokenHelper.refreshToken(token.getToken(),Date.from(Instant.ofEpochMilli(expiration)));
         response.addHeader("ws-token", token.getToken());
-        LOG.info("a new token has been refreshed for user:{} - new token is {}", tokenHelper.getUsernameFromToken(renewedToken),
-                renewedToken);
-        return ResponseEntity.ok(new UserTokenState(renewedToken, expiration, false));
+        if(renewedToken != null) {
+            LOG.info("a new token has been refreshed for user:{} - new token is {}", tokenHelper.getUsernameFromToken(renewedToken),
+                    renewedToken);
+            return ResponseEntity.ok(new UserTokenState(renewedToken, expiration, true));
+        }
+        return ResponseEntity.ok(new UserTokenState(token.getToken(),expiration,false));
     }
-
 
     @PostMapping(value = "/check")
     public ResponseEntity<?> checkAuthenticationToken(@RequestBody Token token,
                                                         HttpServletRequest request,
                                                         HttpServletResponse response) {
         LOG.info("check endpoint with token: {}", token);
-        //TODO
-        return null;
+        Boolean isValid = tokenHelper.isTokenValid(token.getToken());
+        return ResponseEntity.ok(new UserTokenState(token.getToken(),expiration,isValid));
     }
 
 

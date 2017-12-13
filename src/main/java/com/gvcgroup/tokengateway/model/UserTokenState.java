@@ -5,41 +5,41 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserTokenState {
 
-    private String accessToken;
-    private Long expiresIn;
-    private Boolean expired;
+    private String token;
+    private Long expiration;
+    private Boolean isValid;
 
     public UserTokenState() {
     }
 
-    public UserTokenState(String accessToken, Long expiresIn, Boolean expired) {
-        this.accessToken = accessToken;
-        this.expiresIn = expiresIn;
-        this.expired = expired;
+    public UserTokenState(String token, Long expiration, Boolean isValid) {
+        this.token = token;
+        this.expiration = expiration;
+        this.isValid = isValid;
     }
 
-    public String getAccessToken() {
-        return accessToken;
+    public String getToken() {
+        return token;
     }
 
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
+    public void setToken(String token) {
+        this.token = token;
     }
 
-    public Long getExpiresIn() {
-        return expiresIn;
+    public Long getExpiration() {
+        return expiration;
     }
 
-    public void setExpiresIn(Long expiresIn) {
-        this.expiresIn = expiresIn;
+    public void setExpiration(Long expiration) {
+        this.expiration = expiration;
     }
 
-    public Boolean getExpired() {
-        return expired;
+    public Boolean getIsValid() {
+        return isValid;
     }
 
-    public void setExpired(Boolean expired) {
-        this.expired = expired;
+    public void setIsValid(Boolean isValid) {
+        this.isValid = isValid;
     }
 
     @Override
@@ -49,22 +49,22 @@ public class UserTokenState {
 
         UserTokenState that = (UserTokenState) o;
 
-        if (accessToken != null ? !accessToken.equals(that.accessToken) : that.accessToken != null) return false;
-        return expiresIn != null ? expiresIn.equals(that.expiresIn) : that.expiresIn == null;
+        if (token != null ? !token.equals(that.token) : that.token != null) return false;
+        return expiration != null ? expiration.equals(that.expiration) : that.expiration == null;
     }
 
     @Override
     public int hashCode() {
-        int result = accessToken != null ? accessToken.hashCode() : 0;
-        result = 31 * result + (expiresIn != null ? expiresIn.hashCode() : 0);
+        int result = token != null ? token.hashCode() : 0;
+        result = 31 * result + (expiration != null ? expiration.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
         return "UserTokenState{" +
-                "accessToken='" + accessToken + '\'' +
-                ", expiresIn=" + expiresIn +
+                "token='" + token + '\'' +
+                ", expiration=" + expiration +
                 '}';
     }
 }

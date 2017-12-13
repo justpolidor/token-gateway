@@ -29,44 +29,47 @@ public class TokenHelper {
     @Autowired
     TimeProvider timeProvider;
 
-
     private SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.HS512;
 
     public String getUsernameFromToken(String token) {
-        String username;
+        String username = null;
         try {
             final Claims claims = this.getAllClaimsFromToken(token);
             username = claims.getSubject();
         } catch (Exception e) {
-            username = null;
+            LOG.info(e.getMessage());
         }
         return username;
     }
 
     public Date getIssuedAtDateFromToken(String token) {
-        Date issueAt;
+        Date issueAt = null;
         try {
             final Claims claims = this.getAllClaimsFromToken(token);
             issueAt = claims.getIssuedAt();
         } catch (Exception e) {
-            issueAt = null;
+            LOG.info(e.getMessage());
         }
         return issueAt;
     }
 
     public String refreshToken(String token, Date newExpirationDate) {
-        String refreshedToken;
+        String refreshedToken = null;
         Date a = timeProvider.now();
-        try {
-            final Claims claims = this.getAllClaimsFromToken(token);
-            claims.setIssuedAt(a);
-            refreshedToken = Jwts.builder()
-                    .setClaims(claims)
-                    .setExpiration(generateExpirationDate(newExpirationDate))
-                    .signWith( SIGNATURE_ALGORITHM, SECRET.getBytes("UTF-8") )
-                    .compact();
-        } catch (Exception e) {
-            refreshedToken = null;
+        if(isTokenValid(token)){
+            try {
+                final Claims claims = this.getAllClaimsFromToken(token);
+                claims.setIssuedAt(a);
+                refreshedToken = Jwts.builder()
+                        .setClaims(claims)
+                        .setExpiration(generateExpirationDate(newExpirationDate))
+                        .signWith( SIGNATURE_ALGORITHM, SECRET.getBytes("UTF-8") )
+                        .compact();
+            } catch (SignatureException e) {
+                LOG.info(e.getMessage());
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
         }
         return refreshedToken;
     }
@@ -87,31 +90,34 @@ public class TokenHelper {
     }
 
     private Claims getAllClaimsFromToken(String token) {
-        Claims claims;
+        Claims claims = null;
         try {
             claims = Jwts.parser()
                     .setSigningKey(SECRET.getBytes("UTF-8"))
                     .parseClaimsJws(token)
                     .getBody();
-        } catch (Exception e) {
-            claims = null;
+        } catch (SignatureException e) {
+            LOG.warn(e.getMessage());
+        } catch (ExpiredJwtException ex) {
+            LOG.warn(ex.getMessage());
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
         }
         return claims;
     }
 
     public Boolean isTokenValid(String token) {
-        //String username = getUsernameFromToken(token);
-        Date created = getIssuedAtDateFromToken(token);
-        Date expiration;
         try {
-            expiration = Jwts.parser()
+            Jwts.parser()
                     .setSigningKey(SECRET.getBytes("UTF-8"))
-                    .parseClaimsJws(token).getBody().getExpiration();
-            if(!(timeProvider.now().getTime() < (created.getTime() + expiration.getTime()))) {
-                return true;
-            } //TODO
-        } catch (ExpiredJwtException | UnsupportedEncodingException | SignatureException e) {
-            LOG.warn(e.getMessage());
+                    .parseClaimsJws(token);
+            return true;
+        } catch (SignatureException se ) {
+            LOG.warn(se.getMessage());
+        } catch (ExpiredJwtException ex) {
+            LOG.warn(ex.getMessage());
+        } catch (UnsupportedEncodingException e) {
+            LOG.error(e.getMessage());
         }
         return false;
     }
@@ -120,8 +126,15 @@ public class TokenHelper {
         return request.getHeader(AUTH_HEADER);
     }
 
+    /**
+     *
+     * @param date are the mills of validity of the token
+     * @return date of expiration
+     */
     private Date generateExpirationDate(Date date) {
-        return new Date(timeProvider.now().getTime() + date.getTime());
+        Date expirationDate = new Date(timeProvider.now().getTime() + date.getTime());
+        LOG.info("Expiration date: {}", expirationDate.getTime());
+        return expirationDate;
     }
 
 }
